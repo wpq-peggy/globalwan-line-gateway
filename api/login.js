@@ -33,14 +33,22 @@ export default async function handler(req, res) {
   });
 
   const sheets = google.sheets({ version: 'v4', auth });
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range: `${process.env.GOOGLE_SHEET_NAME}!A:D`,
-    valueInputOption: 'RAW',
-    requestBody: {
-      values: [[userData.userId, userData.displayName, new Date().toISOString()]],
-    },
-  });
+  try {
+    // 確保正確範圍 "工作表1!A:D" 設置
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: "工作表1!A:D",  // 目標寫入的範圍
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [
+          [userData.userId, userData.displayName, new Date().toISOString(), "未估價"]  // 增加「未估價」欄位
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("Error writing to Google Sheets:", error);
+    return res.status(500).send('Error writing to Google Sheets');
+  }
 
   // 3. 跳轉 Google 表單（預填 userId）
   const redirectUrl = `${process.env.REDIRECT_FORM_URL}${userData.userId}`;
